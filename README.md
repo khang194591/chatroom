@@ -58,6 +58,6 @@ make
 
 ## How to contribute
 
-1. Fork this repository to your github
+1. Clone this repository
 2. Create new branch namely `development/feature-xxx`
 3. Create pull request (details later)
