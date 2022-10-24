@@ -1,22 +1,41 @@
 ## Installation
 
-### Dependences
+### Dependences (optional)
 
-> `sudo apt install clang-format`
+```
+sudo apt install clang-format
+```
 
 ## Build
 
-> `make`
+```
+make
+```
 
 ## Run
 
-- Server: `./build/server`
-- Client: `./build/client`
-- Test : `./build/test`
+- Server:
+
+```
+  ./build/server
+```
+
+- Client:
+
+```
+ ./build/client
+
+```
+
+- Test :
+
+```
+./build/test
+```
 
 ## Debug
 
-    Choose Client or Server as below(`Ctrl+Shift+D` to open this panel)
+> Choose Client or Server as below(`Ctrl+Shift+D` to open this panel)
 
 ![Select client or server](./assets/image_1.png)
 
@@ -36,3 +55,9 @@
 ```
 
 ## Description
+
+## How to contribute
+
+1. Fork this repository to your github
+2. Create new branch namely `development/feature-xxx`
+3. Create pull request (details later)
