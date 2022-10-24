@@ -1,0 +1,47 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Client",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "program": "${workspaceFolder}/build/client",
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Server",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "program": "${workspaceFolder}/build/server",
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Test",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": ["google.com"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "program": "${workspaceFolder}/build/test",
+      "preLaunchTask": "build"
+    }
+  ]
+}
