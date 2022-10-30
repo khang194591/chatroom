@@ -1,5 +1,7 @@
 #include "io.h"
 
+#include "jrb.h"
+
 void prompt_input(char const *message, char *buff) {
     memset(buff, 0, BUFF_SIZE);
     printf("%s", message);
@@ -12,19 +14,19 @@ void prompt_input(char const *message, char *buff) {
     }
 }
 
-void write_to_file(const char *filename, Array array, DataType type) {
+void write_to_file(const char *filename, JRB arr, DataType type) {
     FILE *file = fopen(filename, "w");
-    int n = array.n;
-    Data *data = array.array;
-    for (int i = 0; i < n; ++i) {
+    JRB node;
+    jrb_traverse(node, arr) {
         if (type == CLIENT) {
-            fprintf(file, "%s %s %d\n", data[i].client.username, data[i].client.password, data[i].client.status);
+            Client *client = (Client *)jval_s(node->val);
+            fprintf(file, "%s %s %d\n", client->username, client->password, client->status);
         }
     }
     fclose(file);
 }
 
-void read_from_file(const char *filename, Array *clients, DataType type) {
+void read_from_file(const char *filename, JRB arr, DataType type) {
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
         return;
@@ -35,17 +37,13 @@ void read_from_file(const char *filename, Array *clients, DataType type) {
         count++;
     }
     rewind(file);
-    clients->n = count;
     for (int i = 0; i < count; ++i) {
         fgets(buff, BUFF_SIZE, file);
         if (type == CLIENT) {
-            sscanf(buff, "%s%s%d", clients->array[i].client.username, clients->array[i].client.password,
-                   &clients->array[i].client.status);
+            Client *client = malloc(sizeof(Client));
+            sscanf(buff, "%s%s%d", client->username, client->password, &client->status);
+            jrb_insert_str(arr, client->username, new_jval_s((char *)client));
         }
     }
-//    for (int i = 0; i < clients->n; ++i) {
-//        Client temp = clients->array[i].client;
-//        printf("%s %s\n", temp.username, temp.password);
-//    }
     fclose(file);
 }

@@ -13,34 +13,37 @@
 
 #define MAX_CLIENT 128
 
-Array array_client;
+JRB array_client;
 
 char buff[BUFF_SIZE + 1];
 char username[BUFF_SIZE];
 char password[BUFF_SIZE];
-char c_buff[BUFF_SIZE];
-char t_buff[BUFF_SIZE];
+char buff_cmd[BUFF_SIZE];
+char buff_cmd_t[BUFF_SIZE];
 char response[BUFF_SIZE];
 
 char *body = NULL;
 
-void exit_handler(int sig) {
+// DONE
+void handle_exit(int sig) {
     clear_line();
     printf("Saving data for next use\n");
     write_to_file("data/client.txt", array_client, CLIENT);
     exit(EXIT_SUCCESS);
 }
 
+// DONE
 void handle_auth(Client *client) {
     sscanf(body, "%s%s", username, password);
-    size_t command_t = strtol(t_buff, NULL, 10);
-    switch (command_t) {
+    size_t cmd_t = strtol(buff_cmd_t, NULL, 10);
+    switch (cmd_t) {
         case AUTH_LOGIN: {
-            Data *u = search_client(username, array_client);
-            if (u == NULL) {
+            JRB node = jrb_find_str(array_client, username);
+            if (node == NULL) {
                 sprintf(response, "%d %s", FAILED, "Invalid username or password");
             } else {
-                if (strcmp(u->client.password, password) != 0) {
+                Client *temp = (Client *)jval_s(node->val);
+                if (strcmp(temp->password, password) != 0) {
                     sprintf(response, "%d %s", FAILED, "Invalid username or password");
                 } else {
                     strcpy(client->username, username);
@@ -51,11 +54,13 @@ void handle_auth(Client *client) {
             break;
         }
         case AUTH_REGISTER: {
-            Data *u = search_client(username, array_client);
-            if (u == NULL) {
-                strcpy(client->username, username);
-                strcpy(client->password, password);
-                array_client.array[array_client.n++].client = *client;
+            JRB node = jrb_find_str(array_client, username);
+            if (node == NULL) {
+                Client *temp = malloc(sizeof(Client));
+                strcpy(temp->username, username);
+                strcpy(temp->password, password);
+                client->status = 0;
+                jrb_insert_str(array_client, temp->username, new_jval_s((char *)temp));
                 sprintf(response, "%d %s", SUCCESS, "ok");
             } else {
                 sprintf(response, "%d %s", FAILED, "Username already taken. Try another one!");
@@ -76,6 +81,30 @@ void handle_auth(Client *client) {
     }
 }
 
+// DEVELOPMENT:
+void handle_dev() {
+    size_t cmd_t = strtol(buff_cmd_t, NULL, 10);
+    switch (cmd_t) {
+        // List all user's username and password: [username] [password]
+        case LIST: {
+            char *buffer = NULL;
+            JRB node;
+            jrb_traverse(node, array_client) {
+                Client client = *(Client *)jval_s(node->val);
+                sprintf(buff, "%s %s\n", client.username, client.password);
+                append(&buffer, buff);
+            }
+            sprintf(response, "%s", buffer);
+            free(buffer);
+            buffer = NULL;
+            break;
+        }
+        default: {
+            break;
+        }
+    }
+}
+
 void *handle_connection(void *arg) {
     Client client = *(Client *)arg;
     size_t bytes_sent, bytes_received;
@@ -83,13 +112,15 @@ void *handle_connection(void *arg) {
     pthread_detach(pthread_self());
 
     while (1) {
+        // Clear all buffer
         bzero(buff, strlen(buff));
         bzero(username, strlen(username));
         bzero(password, strlen(password));
-        bzero(c_buff, strlen(c_buff));
-        bzero(t_buff, strlen(t_buff));
+        bzero(buff_cmd, strlen(buff_cmd));
+        bzero(buff_cmd_t, strlen(buff_cmd_t));
         bzero(response, strlen(response));
 
+        // Receive incoming message
         bytes_received = recv(client.fd, buff, BUFF_SIZE, 0);
         if (bytes_received == -1) {
             PRINT_ERROR;
@@ -97,38 +128,22 @@ void *handle_connection(void *arg) {
             break;
         }
 
+        // DEVELOPMENT: Handle remote shutdown command
         if (strcmp(buff, "exit") == 0) {
-            exit_handler(0);
+            handle_exit(0);
         }
 
-        sscanf(buff, "%s%s", c_buff, t_buff);
-        body = buff + strlen(c_buff) + strlen(t_buff) + 2;
-        switch (strtol(c_buff, NULL, 10)) {
+        // Request: [CMD] [CMD_T] [BODY]
+        sscanf(buff, "%s%s", buff_cmd, buff_cmd_t);
+        body = buff + strlen(buff_cmd) + strlen(buff_cmd_t) + 2;
+        switch (strtol(buff_cmd, NULL, 10)) {
             case CMD_AUTH: {
                 handle_auth(&client);
                 break;
             }
+            // DEVELOPMENT:
             case DEV: {
-                size_t command_t = strtol(t_buff, NULL, 10);
-                switch (command_t) {
-                    case LIST: {
-                        char line[BUFF_SIZE];
-                        char *buffer = NULL;
-                        for (int i = 0; i < array_client.n; ++i) {
-                            Client temp = array_client.array[i].client;
-                            sprintf(line, "%s %s\n", temp.username, temp.password);
-                            //                            printf("%s %s\n", temp.username, temp.password);
-                            append(&buffer, line);
-                        }
-                        sprintf(response, "%s", buffer);
-                        free(buffer);
-                        buffer = NULL;
-                        break;
-                    }
-                    default: {
-                        break;
-                    }
-                }
+                handle_dev();
                 break;
             }
             default: {
@@ -136,20 +151,21 @@ void *handle_connection(void *arg) {
                 break;
             }
         }
-
+        // Send response to client
         bytes_sent = send(client.fd, response, strlen(response), 0);
         if (bytes_sent == -1) {
             PRINT_ERROR;
         }
     }
+    free(arg);
+    // Close connection
     close(client.fd);
-    printf("%s disconnected\n", client.username);
     return NULL;
 }
 
 int main(int argc, char *argv[]) {
     // Handle exit by ctrl+C
-    signal(SIGINT, exit_handler);
+    signal(SIGINT, handle_exit);
 
     int server_fd;
     struct sockaddr_in server_addr, client_addr;
@@ -166,7 +182,8 @@ int main(int argc, char *argv[]) {
         PRINT_ERROR;
         exit(EXIT_FAILURE);
     }
-    read_from_file("data/client.txt", &array_client, CLIENT);
+    array_client = make_jrb();
+    read_from_file("data/client.txt", array_client, CLIENT);
 
     // Step 1: Construct a TCP socket to listen connection request
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {

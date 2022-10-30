@@ -21,30 +21,28 @@
 
 typedef struct client {
     int fd;
+    int id;
     int status;
     char username[BUFF_SIZE / 8];
     char password[BUFF_SIZE / 8];
 } Client;
 
-typedef struct response {
-    int state;
-    char message[BUFF_SIZE];
-} Response;
+typedef struct room {
+    int id;
+    int users[BUFF_SIZE * 4];
+    char name[BUFF_SIZE / 8];
+    char moderator[BUFF_SIZE / 8];
+} Room;
 
-typedef enum data_t { CLIENT, RESPONSE } DataType;
+typedef enum data_t { CLIENT, ROOM } DataType;
 
 typedef union data {
     Client client;
-    Response response;
+    Room room;
 } Data;
-
-typedef struct array {
-    int n;
-    Data array[BUFF_SIZE * 4];
-} Array;
 
 int compare_client(const void *a, const void *b);
 
-Data *search_client(const char *username, Array clients);
+Data *search_client(const char *username, Data *clients);
 
 #endif  // TYPE_H

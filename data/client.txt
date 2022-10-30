@@ -1,3 +1,7 @@
-admin admin 0
-khang.td194591@sis.hust.edu.vn 123456 0
-khang.td 123 0
+khang.td 1 0
+khang1 1 0
+khang2 1 0
+khang3 1 0
+khang4 1 0
+khang5 1 0
+khang6 1 0

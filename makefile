@@ -6,7 +6,9 @@ SRC_DIRS 	:= ./src
 
 BUILD_DIR 	:= ./build
 
-CFLAGS 		:= -g -Wall -I$(INC_DIR) -pthread
+LIB			:= ./lib
+
+CFLAGS 		:= -g -Wall -I$(INC_DIR) -I$(LIB) -pthread
 
 CLIENT 		:= $(BUILD_DIR)/client
 
@@ -27,10 +29,10 @@ CLIENT_OBJS := $(CLIENT_SRCS:%=$(BUILD_DIR)/%.o)
 all: $(CLIENT) $(SERVER)
 
 $(CLIENT): $(COMMON_OBJS) $(CLIENT_OBJS)
-	$(CC) $(CFLAGS) $(COMMON_OBJS) $(CLIENT_OBJS) -o $@
+	$(CC) $(CFLAGS) $(COMMON_OBJS) $(CLIENT_OBJS) -o $@ lib/libfdr.a
 	
 $(SERVER): $(COMMON_OBJS) $(SERVER_OBJS)
-	$(CC) $(CFLAGS) $(COMMON_OBJS) $(SERVER_OBJS) -o $@
+	$(CC) $(CFLAGS) $(COMMON_OBJS) $(SERVER_OBJS) -o $@ lib/libfdr.a
 
 $(BUILD_DIR)/%.c.o: %.c
 	mkdir -p $(dir $@)

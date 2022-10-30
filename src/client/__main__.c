@@ -25,10 +25,15 @@ void handle_dev() {
     int EXIT = 3;
     while (choice != EXIT) {
         int flag = 1;
-        printf("1. List all account\n2. Register\n3. Exit\n");
+        printf("0. Shutdown server\n1. List all account\n2. Register\n3. Exit\n");
         prompt_input("Enter: ", buff);
         choice = strtol(buff, NULL, 10);
         switch (choice) {
+            case 0: {
+                sprintf(buff, "exit");
+                send(fd, buff, strlen(buff), 0);
+                break;
+            }
             case 1: {
                 sprintf(buff, "%d %d", DEV, LIST);
                 send(fd, buff, strlen(buff), 0);
@@ -52,7 +57,7 @@ void handle_home() {
     uint choice = 0;
     while (choice != 3) {
         int flag = 1;
-        system("clear");
+        //        system("clear");
         printf("====================== CHAT APP ======================\n");
 
         printf("1. List all account\n2. Register\n3. Logout\n");
