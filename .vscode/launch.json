@@ -19,7 +19,7 @@
       "name": "Server",
       "type": "cppdbg",
       "request": "launch",
-      "args": [],
+      "args": ["3000"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],

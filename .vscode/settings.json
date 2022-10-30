@@ -4,6 +4,10 @@
   "files.associations": {
     "jrb.h": "c",
     "errno.h": "c",
-    "socket.h": "c"
+    "socket.h": "c",
+    "database.h": "c",
+    "array": "c",
+    "string": "c",
+    "string_view": "c"
   }
 }

@@ -1,51 +1,40 @@
-CC := gcc
+CC 			:= gcc
 
-INC_DIR := ./include
+INC_DIR 	:= ./include
 
-SRC_DIRS := ./src
+SRC_DIRS 	:= ./src
 
-BUILD_DIR := ./build
+BUILD_DIR 	:= ./build
 
-CFLAGS := -g -Wall -I$(INC_DIR) -pthread
+CFLAGS 		:= -g -Wall -I$(INC_DIR) -pthread
 
-CLIENT := $(BUILD_DIR)/client
+CLIENT 		:= $(BUILD_DIR)/client
 
-SERVER := $(BUILD_DIR)/server
+SERVER 		:= $(BUILD_DIR)/server
 
-TEST   := $(BUILD_DIR)/test
+COMMON_SRCS := $(shell find $(SRC_DIRS)/common -name '*.c')
 
-CLIENT_SRCS := $(shell find $(SRC_DIRS) -name '*.c' -not -name 'server.c' -not -name 'test.c')
+COMMON_OBJS := $(COMMON_SRCS:%=$(BUILD_DIR)/%.o)
 
-CLIENT_OBJS := $(CLIENT_SRCS:%=$(BUILD_DIR)/%.o)
-
-SERVER_SRCS := $(shell find $(SRC_DIRS) -name '*.c' -not -name 'client.c' -not -name 'test.c')
+SERVER_SRCS := $(shell find $(SRC_DIRS)/server -name '*.c')
 
 SERVER_OBJS := $(SERVER_SRCS:%=$(BUILD_DIR)/%.o)
 
-TEST_SRCS := $(shell find $(SRC_DIRS) -name '*.c' -not -name 'client.c' -not -name 'server.c')
+CLIENT_SRCS := $(shell find $(SRC_DIRS)/client -name '*.c')
 
-TEST_OBJS := $(TEST_SRCS:%=$(BUILD_DIR)/%.o)
+CLIENT_OBJS := $(CLIENT_SRCS:%=$(BUILD_DIR)/%.o)
 
-all: $(CLIENT) $(SERVER) $(TEST)
+all: $(CLIENT) $(SERVER)
 
-$(CLIENT): $(CLIENT_OBJS)
-	$(CC) $(CFLAGS) $(CLIENT_OBJS) -o $@ lib/libfdr.a
+$(CLIENT): $(COMMON_OBJS) $(CLIENT_OBJS)
+	$(CC) $(CFLAGS) $(COMMON_OBJS) $(CLIENT_OBJS) -o $@
 	
-$(SERVER): $(SERVER_OBJS)
-	$(CC) $(CFLAGS) $(SERVER_OBJS) -o $@ lib/libfdr.a	
-
-$(TEST): $(TEST_OBJS)
-	$(CC) $(CFLAGS) $(TEST_OBJS) -o $@ lib/libfdr.a	
+$(SERVER): $(COMMON_OBJS) $(SERVER_OBJS)
+	$(CC) $(CFLAGS) $(COMMON_OBJS) $(SERVER_OBJS) -o $@
 
 $(BUILD_DIR)/%.c.o: %.c
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
-
-server: $(SERVER)
-	$(SERVER)
-
-client: $(CLIENT)
-	$(CLIENT)
 
 clean:
 	rm -r $(BUILD_DIR)
