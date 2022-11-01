@@ -13,7 +13,8 @@
 
 #define MAX_CLIENT 128
 
-JRB array_client;
+JRB rooms;
+JRB clients;
 
 char buff[BUFF_SIZE + 1];
 char username[BUFF_SIZE];
@@ -28,7 +29,8 @@ char *body = NULL;
 void handle_exit(int sig) {
     clear_line();
     printf("Saving data for next use\n");
-    write_to_file("data/client.txt", array_client, CLIENT);
+    write_to_file("data/client.txt", clients, CLIENT);
+    write_to_file("data/room.txt", rooms, ROOM);
     exit(EXIT_SUCCESS);
 }
 
@@ -38,7 +40,7 @@ void handle_auth(Client *client) {
     size_t cmd_t = strtol(buff_cmd_t, NULL, 10);
     switch (cmd_t) {
         case AUTH_LOGIN: {
-            JRB node = jrb_find_str(array_client, username);
+            JRB node = jrb_find_str(clients, username);
             if (node == NULL) {
                 sprintf(response, "%d %s", FAILED, "Invalid username or password");
             } else {
@@ -54,13 +56,13 @@ void handle_auth(Client *client) {
             break;
         }
         case AUTH_REGISTER: {
-            JRB node = jrb_find_str(array_client, username);
+            JRB node = jrb_find_str(clients, username);
             if (node == NULL) {
                 Client *temp = malloc(sizeof(Client));
                 strcpy(temp->username, username);
                 strcpy(temp->password, password);
                 client->status = 0;
-                jrb_insert_str(array_client, temp->username, new_jval_s((char *)temp));
+                jrb_insert_str(clients, temp->username, new_jval_s((char *)temp));
                 sprintf(response, "%d %s", SUCCESS, "ok");
             } else {
                 sprintf(response, "%d %s", FAILED, "Username already taken. Try another one!");
@@ -81,6 +83,35 @@ void handle_auth(Client *client) {
     }
 }
 
+void handle_room() {
+    char moderator[BUFF_SIZE / 8];
+    char room_name[BUFF_SIZE / 8];
+    sscanf(body, "%s%s", moderator, room_name);
+    size_t cmd_t = strtol(buff_cmd_t, NULL, 10);
+    switch (cmd_t) {
+        case ROOM_CREATE: {
+            JRB node = jrb_find_str(rooms, room_name);
+            if (node == NULL) {
+                Room *temp = malloc(sizeof(Room));
+                strcpy(temp->name, room_name);
+                strcpy(temp->moderator, moderator);
+                temp->status = 1;
+                temp->users = make_jrb();
+                jrb_insert_str(temp->users, strdup(moderator), new_jval_s(strdup(moderator)));
+                jrb_insert_str(rooms, temp->name, new_jval_v((temp)));
+                sprintf(response, "%d %s", SUCCESS, "ok");
+            } else {
+                sprintf(response, "%d %s", FAILED, "This name already taken. Try another one!");
+            }
+            break;
+        }
+        default: {
+            sprintf(response, "%d %s", FAILED, "Invalid request!");
+            break;
+        }
+    }
+}
+
 // DEVELOPMENT:
 void handle_dev() {
     size_t cmd_t = strtol(buff_cmd_t, NULL, 10);
@@ -89,7 +120,7 @@ void handle_dev() {
         case LIST: {
             char *buffer = NULL;
             JRB node;
-            jrb_traverse(node, array_client) {
+            jrb_traverse(node, clients) {
                 Client client = *(Client *)jval_s(node->val);
                 sprintf(buff, "%s %s\n", client.username, client.password);
                 append(&buffer, buff);
@@ -146,6 +177,9 @@ void *handle_connection(void *arg) {
                 handle_dev();
                 break;
             }
+            case CMD_ROOM:
+                handle_room();
+                break;
             default: {
                 sprintf(response, "%d %s", FAILED, "Invalid request!");
                 break;
@@ -182,8 +216,10 @@ int main(int argc, char *argv[]) {
         PRINT_ERROR;
         exit(EXIT_FAILURE);
     }
-    array_client = make_jrb();
-    read_from_file("data/client.txt", array_client, CLIENT);
+    rooms = make_jrb();
+    clients = make_jrb();
+    read_from_file("data/room.txt", rooms, ROOM);
+    read_from_file("data/client.txt", clients, CLIENT);
 
     // Step 1: Construct a TCP socket to listen connection request
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {

@@ -19,8 +19,14 @@ void write_to_file(const char *filename, JRB arr, DataType type) {
     JRB node;
     jrb_traverse(node, arr) {
         if (type == CLIENT) {
-            Client *client = (Client *)jval_s(node->val);
+            Client *client = jval_v(node->val);
             fprintf(file, "%s %s %d\n", client->username, client->password, client->status);
+        } else if (type == ROOM) {
+            Room *room = jval_v(node->val);
+            fprintf(file, "%s %s ", room->name, room->moderator);
+            JRB user;
+            jrb_traverse(user, room->users) { fprintf(file, "%s=", jval_s(user->val)); }
+            fprintf(file, "\n");
         }
     }
     fclose(file);
@@ -42,7 +48,25 @@ void read_from_file(const char *filename, JRB arr, DataType type) {
         if (type == CLIENT) {
             Client *client = malloc(sizeof(Client));
             sscanf(buff, "%s%s%d", client->username, client->password, &client->status);
-            jrb_insert_str(arr, client->username, new_jval_s((char *)client));
+            jrb_insert_str(arr, client->username, new_jval_v(client));
+        } else if (type == ROOM) {
+            char users[BUFF_SIZE];
+            Room *room = malloc(sizeof(Room));
+            sscanf(buff, "%s%s%s", room->name, room->moderator, users);
+            room->users = make_jrb();
+            char *token;
+
+            /* get the first token */
+            token = strtok(users, "=");
+
+            /* walk through other tokens */
+            while (token != NULL) {
+                jrb_insert_str(room->users, strdup(token), new_jval_s(strdup(token)));
+                token = strtok(NULL, "=");
+            }
+            jrb_insert_str(arr, room->moderator, new_jval_v(room));
+            free(token);
+            token = NULL;
         }
     }
     fclose(file);

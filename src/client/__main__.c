@@ -22,9 +22,10 @@ char res_msg[BUFF_SIZE];
 
 void handle_dev() {
     uint choice = 0;
-    int EXIT = 3;
-    while (choice != EXIT) {
+    while (choice != 3) {
         int flag = 1;
+        // system("clear");
+        printf("====================== DEVELOPMENT ======================\n");
         printf("0. Shutdown server\n1. List all account\n2. Register\n3. Exit\n");
         prompt_input("Enter: ", buff);
         choice = strtol(buff, NULL, 10);
@@ -45,7 +46,7 @@ void handle_dev() {
             }
         }
         if (flag) {
-            memset(buff, 0, strlen(buff));
+            bzero(buff, strlen(buff));
             if (recv(fd, buff, BUFF_SIZE, 0) != -1) {
                 printf("%s\n", buff);
             }
@@ -55,23 +56,30 @@ void handle_dev() {
 
 void handle_home() {
     uint choice = 0;
+    char buff_rn[BUFF_SIZE / 8];
+    char temp[BUFF_SIZE];
     while (choice != 3) {
         int flag = 1;
         //        system("clear");
         printf("====================== CHAT APP ======================\n");
 
-        printf("1. List all account\n2. Register\n3. Logout\n");
-        prompt_input("Enter: ", buff);
-        choice = strtol(buff, NULL, 10);
+        printf("1. Create room\n2. Join room\n3. Logout\n");
+        bzero(temp, strlen(temp));
+        prompt_input("Enter: ", temp);
+        choice = strtol(temp, NULL, 10);
         switch (choice) {
             case 1: {
-                sprintf(buff, "%d %d", DEV, LIST);
-                send(fd, buff, strlen(buff), 0);
+                prompt_input("Room's name: ", buff_rn);
+                Room room;
+                strcpy(room.name, buff_rn);
+                strcpy(room.moderator, username);
+                sprintf(temp, "%d %d %s %s", CMD_ROOM, ROOM_CREATE, room.moderator, room.name);
+                send(fd, temp, strlen(temp), 0);
                 break;
             }
             case 3: {
-                sprintf(buff, "%d %d", CMD_AUTH, AUTH_LOGOUT);
-                send(fd, buff, strlen(buff), 0);
+                sprintf(temp, "%d %d", CMD_AUTH, AUTH_LOGOUT);
+                send(fd, temp, strlen(temp), 0);
                 break;
             }
             default: {
@@ -80,9 +88,9 @@ void handle_home() {
             }
         }
         if (flag) {
-            memset(buff, 0, strlen(buff));
-            if (recv(fd, buff, BUFF_SIZE, 0) != -1) {
-                printf("%s\n", buff);
+            bzero(temp, strlen(temp));
+            if (recv(fd, temp, BUFF_SIZE, 0) != -1) {
+                printf("%s\n", temp);
             }
         }
     }
@@ -92,8 +100,9 @@ void handle_auth() {
     uint choice = 0;
 
     while (choice != 3) {
-        system("clear");
         int flag = 1;
+        system("clear");
+        printf("====================== AUTH ======================\n");
         printf("0. Developer mode\n");
         printf("1. Login\n2. Register\n3. Exit\n");
         prompt_input("Enter: ", buff);
@@ -125,8 +134,9 @@ void handle_auth() {
                 sscanf(buff, "%s%s", res_stt, res_msg);
                 if (strtol(res_stt, NULL, 10)) {
                     handle_home();
+                } else {
+                    printf("%s\n", res_msg);
                 }
-                printf("%s\n", buff);
             }
         }
         prompt_input("Enter anything to continue...", buff);

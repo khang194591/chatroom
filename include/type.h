@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "jrb.h"
+
 #define BUFF_SIZE 256
 
 #define SUCCESS 1
@@ -14,6 +16,10 @@
 #define AUTH_LOGIN 0
 #define AUTH_REGISTER 1
 #define AUTH_LOGOUT 2
+
+// Room command
+#define CMD_ROOM 1
+#define ROOM_CREATE 0
 
 // Dev command
 #define DEV 99
@@ -29,7 +35,8 @@ typedef struct client {
 
 typedef struct room {
     int id;
-    int users[BUFF_SIZE * 4];
+    int status;
+    JRB users;
     char name[BUFF_SIZE / 8];
     char moderator[BUFF_SIZE / 8];
 } Room;
